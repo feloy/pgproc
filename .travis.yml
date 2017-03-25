@@ -2,3 +2,15 @@ language: go
 go:
   - 1.8
   - master
+env:
+  global:
+  - DBNAME='pgproctest'
+  - DBUSER='pgproctest'
+  - DBPASS='pgproctest'
+  - DBHOST='localhost'
+services:
+  - postgresql
+addons:
+  postgresql: '9.4'
+before_install:
+  - PGPASSWORD=$DBPASS psql -h $DBHOST -U $DBUSER $DBNAME < tests.sql
