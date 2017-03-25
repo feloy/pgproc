@@ -1,9 +1,10 @@
 package pgproc
 
-import (
+import (	
 	"fmt"
 	_ "github.com/lib/pq"
 	"testing"
+	"time"
 )
 
 var (
@@ -72,3 +73,94 @@ func TestCallReturnsInteger(t *testing.T) {
 		t.Errorf("Error expected %d value is %d", 42, res)
 	}
 }
+
+func TestCallReturnsIntegerAsString(t *testing.T) {
+	base, err := connect()
+	var res string
+	err = base.Call(&res, "tests", "test_returns_integer_as_string")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_integer_as_string")
+	}
+	if res != "42" {
+		t.Errorf("Error expected '%s' value is '%s'", "42", res)
+	}
+}
+
+func TestCallReturnsString(t *testing.T) {
+	base, err := connect()
+	var res string
+	err = base.Call(&res, "tests", "test_returns_string")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_string")
+	}
+	if res != "hello" {
+		t.Errorf("Error expected '%s' value is '%s'", "hello", res)
+	}
+}
+
+func TestCallReturnsNumeric(t *testing.T) {
+	base, err := connect()
+	var res float32
+	err = base.Call(&res, "tests", "test_returns_numeric")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_numeric")
+	}
+	if res != 3.14159 {
+		t.Errorf("Error expected %f value is %f", 3.14159, res)
+	}
+}
+
+func TestCallReturnsReal(t *testing.T) {
+	base, err := connect()
+	var res float32
+	err = base.Call(&res, "tests", "test_returns_real")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_real")
+	}
+	if res != 3.14 {
+		t.Errorf("Error expected %f value is %f", 3.14, res)
+	}
+}
+
+func TestCallReturnsBoolTrue(t *testing.T) {
+	base, err := connect()
+	var res bool
+	err = base.Call(&res, "tests", "test_returns_bool_true")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_bool_true")
+	}
+	if res != true {
+		t.Errorf("Error expected %t value is %t", true, res)
+	}
+}
+
+func TestCallReturnsBoolFalse(t *testing.T) {
+	base, err := connect()
+	var res bool
+	err = base.Call(&res, "tests", "test_returns_bool_false")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_bool_false")
+	}
+	if res != false {
+		t.Errorf("Error expected %t value is %t", false, res)
+	}
+}
+
+func TestCallReturnsDate(t *testing.T) {
+	base, err := connect()
+	var res time.Time
+	err = base.Call(&res, "tests", "test_returns_date")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_date")
+	}
+	yExp, mExp, dExp := res.Date()
+	yNow, mNow, dNow := time.Now().Date()
+	if yExp != yNow || mExp != mNow || dExp != dNow {
+		t.Errorf("Error expected value")
+	}
+	h, m, s := res.Clock()
+	if h != 0 || m != 0 || s != 0 {
+		t.Errorf("Error expected clock 0")
+	}
+}
+
