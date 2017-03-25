@@ -4,11 +4,17 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
+	"time"
 )
 
 type PgProc struct {
 	db *sql.DB
 }
+
+var (
+	DateMinusInfinity = time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+	DateInfinity      = time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)
+)
 
 // NewPgProc creates a new connection to a PostgreSQL database
 func NewPgProc(conninfo string) (*PgProc, error) {
@@ -18,6 +24,7 @@ func NewPgProc(conninfo string) (*PgProc, error) {
 	if err != nil {
 		return nil, err
 	}
+	pq.EnableInfinityTs(DateMinusInfinity, DateInfinity)
 	return &pgproc, nil
 }
 

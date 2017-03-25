@@ -1,6 +1,6 @@
 package pgproc
 
-import (	
+import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"testing"
@@ -12,15 +12,13 @@ var (
 	password = "pgproctest"
 	host     = "localhost"
 	dbname   = "pgproctest"
+	base     *PgProc
 )
 
-func TestNewPgProc(t *testing.T) {
-	conninfo := fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=disable",
-		user, password, host, dbname)
-	_, err := NewPgProc(conninfo)
-	if err != nil {
-		t.Errorf("Error connecting to db")
-	}
+func TestMain(m *testing.M) {
+	base, _ = connect()
+	m.Run()
+	//	disconnect()
 }
 
 func connect() (*PgProc, error) {
@@ -54,18 +52,16 @@ func TestParamsString(t *testing.T) {
 }
 
 func TestCallUnknown(t *testing.T) {
-	base, err := connect()
 	var res int
-	err = base.Call(&res, "tests", "unknown_function")
+	err := base.Call(&res, "tests", "unknown_function")
 	if err == nil {
 		t.Errorf("Error calling unknown function")
 	}
 }
 
 func TestCallReturnsInteger(t *testing.T) {
-	base, err := connect()
 	var res int
-	err = base.Call(&res, "tests", "test_returns_integer")
+	err := base.Call(&res, "tests", "test_returns_integer")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_integer")
 	}
@@ -75,9 +71,8 @@ func TestCallReturnsInteger(t *testing.T) {
 }
 
 func TestCallReturnsIntegerAsString(t *testing.T) {
-	base, err := connect()
 	var res string
-	err = base.Call(&res, "tests", "test_returns_integer_as_string")
+	err := base.Call(&res, "tests", "test_returns_integer_as_string")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_integer_as_string")
 	}
@@ -87,9 +82,8 @@ func TestCallReturnsIntegerAsString(t *testing.T) {
 }
 
 func TestCallReturnsString(t *testing.T) {
-	base, err := connect()
 	var res string
-	err = base.Call(&res, "tests", "test_returns_string")
+	err := base.Call(&res, "tests", "test_returns_string")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_string")
 	}
@@ -99,9 +93,8 @@ func TestCallReturnsString(t *testing.T) {
 }
 
 func TestCallReturnsNumeric(t *testing.T) {
-	base, err := connect()
 	var res float32
-	err = base.Call(&res, "tests", "test_returns_numeric")
+	err := base.Call(&res, "tests", "test_returns_numeric")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_numeric")
 	}
@@ -111,9 +104,8 @@ func TestCallReturnsNumeric(t *testing.T) {
 }
 
 func TestCallReturnsReal(t *testing.T) {
-	base, err := connect()
 	var res float32
-	err = base.Call(&res, "tests", "test_returns_real")
+	err := base.Call(&res, "tests", "test_returns_real")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_real")
 	}
@@ -123,9 +115,8 @@ func TestCallReturnsReal(t *testing.T) {
 }
 
 func TestCallReturnsBoolTrue(t *testing.T) {
-	base, err := connect()
 	var res bool
-	err = base.Call(&res, "tests", "test_returns_bool_true")
+	err := base.Call(&res, "tests", "test_returns_bool_true")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_bool_true")
 	}
@@ -135,9 +126,8 @@ func TestCallReturnsBoolTrue(t *testing.T) {
 }
 
 func TestCallReturnsBoolFalse(t *testing.T) {
-	base, err := connect()
 	var res bool
-	err = base.Call(&res, "tests", "test_returns_bool_false")
+	err := base.Call(&res, "tests", "test_returns_bool_false")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_bool_false")
 	}
@@ -147,9 +137,8 @@ func TestCallReturnsBoolFalse(t *testing.T) {
 }
 
 func TestCallReturnsDate(t *testing.T) {
-	base, err := connect()
 	var res time.Time
-	err = base.Call(&res, "tests", "test_returns_date")
+	err := base.Call(&res, "tests", "test_returns_date")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_date")
 	}
@@ -163,4 +152,75 @@ func TestCallReturnsDate(t *testing.T) {
 		t.Errorf("Error expected clock 0")
 	}
 }
+
+func TestCallReturnsInfinityDate(t *testing.T) {
+	var res time.Time
+	err := base.Call(&res, "tests", "test_returns_infinity_date")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_infinity_date")
+	}
+	if res != DateInfinity {
+		t.Errorf("Error date infinity")
+	}
+}
+
+func TestCallReturnsMinusInfinityDate(t *testing.T) {
+	var res time.Time
+	err := base.Call(&res, "tests", "test_returns_minus_infinity_date")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_minus_infinity_date")
+	}
+	if res != DateMinusInfinity {
+		t.Errorf("Error date infinity")
+	}
+}
+
+func TestCallReturns64bitsDate(t *testing.T) {
+	var res time.Time
+	err := base.Call(&res, "tests", "test_returns_64bits_date")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_64bits_date")
+	}
+	y, m, d := res.Date()
+	if y != 2040 || m != 1 || d != 1 {
+		t.Errorf("Error 64bits date")
+	}
+}
+
+func TestCallReturnsTimestamp(t *testing.T) {
+	var res time.Time
+	err := base.Call(&res, "tests", "test_returns_timestamp")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_timestamp")
+	}
+	yExp, mExp, dExp := res.Date()
+	yNow, mNow, dNow := time.Now().Date()
+	if yExp != yNow || mExp != mNow || dExp != dNow {
+		t.Errorf("Error expected value")
+	}
+}
+
+
+func TestCallReturnsTime(t *testing.T) {
+	var res time.Time
+	err := base.Call(&res, "tests", "test_returns_time")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_time")
+	}
+	y, m, d := res.Date()
+	if y != 0 || m != 1 || d != 1 {
+		t.Errorf("Error expected date 0/1/1")
+	}
+}
+/*
+func TestCallReturnsComposite(t *testing.T) {
+	var res int
+	err := base.Call(&res, "tests", "test_returns_composite")
+	fmt.Println(res)
+	if err != nil {
+		fmt.Println(err)
+		t.Errorf("Error calling tests.test_returns_composite")
+	}
+}
+*/
 
