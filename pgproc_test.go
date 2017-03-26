@@ -69,6 +69,14 @@ func TestCallReturnsInteger(t *testing.T) {
 	}
 }
 
+func TestCallReturnsSetofInteger(t *testing.T) {
+	ch := make(chan int64) // Must be int64, Value.Int() returns int64???
+	go base.Call(ch, "tests", "test_returns_setof_integer")
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+}
+
 func TestCallReturnsIntegerAsString(t *testing.T) {
 	var res string
 	err := base.Call(&res, "tests", "test_returns_integer_as_string")
@@ -88,6 +96,17 @@ func TestCallReturnsString(t *testing.T) {
 	}
 	if res != "hello" {
 		t.Errorf("Error expected '%s' value is '%s'", "hello", res)
+	}
+}
+
+func TestCallReturnsSetofString(t *testing.T) {
+	ch := make(chan string)
+	go base.Call(ch, "tests", "test_returns_setof_string")
+	a := <-ch
+	b := <-ch
+	c := <-ch
+	if a != "hello"|| b != "world" || c != "!" {
+		t.Errorf("Error expected values")
 	}
 }
 

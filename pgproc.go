@@ -50,10 +50,25 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 		pq.QuoteIdentifier(proc),
 		paramsString(len(params)))
 
-	row := p.db.QueryRow(query, params...)
 	if rt.scalar {
-		err = row.Scan(result)
+		if !rt.setof {
+			row := p.db.QueryRow(query, params...)
+			err = row.Scan(result)
+		} else {
+			rows, _ := p.db.Query(query, params...)
+			defer rows.Close()
+			c := reflect.ValueOf(result) // the channel we have to send to
+			// val is a zero element of the same type of the channel type
+			val := reflect.Zero(reflect.TypeOf(result).Elem()).Interface()
+			for rows.Next() {
+				if err := rows.Scan(&val); err != nil {
+					return err
+				}
+				c.Send(reflect.ValueOf(val))
+			}
+		}
 	} else {
+		row := p.db.QueryRow(query, params...)
 		err = ScanCompositeRow(row, rt, result)
 	}
 	return err

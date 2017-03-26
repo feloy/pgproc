@@ -18,6 +18,18 @@ AS $$
   SELECT 42;
 $$;
 
+CREATE FUNCTION tests.test_returns_setof_integer()
+RETURNS SETOF integer
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT 42;
+  RETURN NEXT 43;
+  RETURN NEXT 44;
+END;
+$$;
+
 CREATE FUNCTION tests.test_returns_integer_as_string()
 RETURNS character varying
 LANGUAGE SQL
@@ -32,6 +44,18 @@ LANGUAGE SQL
 IMMUTABLE
 AS $$
   SELECT 'hello'::varchar;
+$$;
+
+CREATE FUNCTION tests.test_returns_setof_string()
+RETURNS SETOF character varying
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT 'hello'::varchar;
+  RETURN NEXT 'world'::varchar;
+  RETURN NEXT '!'::varchar;
+END;
 $$;
 
 CREATE FUNCTION tests.test_returns_numeric()
