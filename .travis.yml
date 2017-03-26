@@ -18,4 +18,6 @@ before_install:
   - PGPASSWORD=$DBPASS psql -h $DBHOST -U $DBUSER $DBNAME < tests.sql
   - go get github.com/mattn/goveralls
 script:
-  - $HOME/gopath/bin/goveralls -service=travis-ci
+  - go test -v -covermode=count -coverprofile=profile.cov
+after_success:
+  - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci
