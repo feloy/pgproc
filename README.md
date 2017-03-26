@@ -12,6 +12,9 @@ map types of parameters and returned values between both worlds.
 The main advantage of the `pgproc` library is to be able to call in a single pair of lines
 a PostgreSQL stored procedure and get its result in a Go native of `struct` variable.
 
+**This library is at an early development stage, please have a look at the tests files 
+to see the covered cases.**
+
 ## Install
 
 ```sh
