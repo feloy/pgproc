@@ -66,12 +66,34 @@ AS $$
   SELECT 3.14159::numeric;
 $$;
 
+CREATE FUNCTION tests.test_returns_setof_numeric()
+RETURNS SETOF numeric
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT 3.14159::numeric;
+  RETURN NEXT 4.49::numeric;
+END;
+$$;
+
 CREATE FUNCTION tests.test_returns_real()
 RETURNS real
 LANGUAGE SQL
 IMMUTABLE
 AS $$
   SELECT 3.14::real;
+$$;
+
+CREATE FUNCTION tests.test_returns_setof_real()
+RETURNS SETOF real
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT 3.14::real;
+  RETURN NEXT 4.49::real;
+END;
 $$;
 
 CREATE FUNCTION tests.test_returns_bool_true()
@@ -88,6 +110,19 @@ LANGUAGE SQL
 IMMUTABLE
 AS $$
   SELECT false;
+$$;
+
+CREATE FUNCTION tests.test_returns_setof_bool()
+RETURNS SETOF boolean
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT false;
+  RETURN NEXT true;
+  RETURN NEXT true;
+  RETURN NEXT false;
+END;
 $$;
 
 CREATE FUNCTION tests.test_returns_date()
@@ -120,6 +155,17 @@ LANGUAGE SQL
 IMMUTABLE
 AS $$
   SELECT '2040-01-01'::date;
+$$;
+
+CREATE FUNCTION tests.test_returns_setof_date()
+RETURNS SETOF date
+LANGUAGE PLPGSQL
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN NEXT '2015-01-01';
+  RETURN NEXT '2016-02-02';
+END;
 $$;
 
 CREATE FUNCTION tests.test_returns_timestamp()

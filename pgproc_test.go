@@ -2,9 +2,14 @@ package pgproc
 
 import (
 	"fmt"
-	_ "github.com/lib/pq"
+	"math"
 	"testing"
 	"time"
+	_ "github.com/lib/pq"
+)
+
+const (
+	TOLERANCE = 1e-6
 )
 
 var (
@@ -72,9 +77,12 @@ func TestCallReturnsInteger(t *testing.T) {
 func TestCallReturnsSetofInteger(t *testing.T) {
 	ch := make(chan int64) // Must be int64, Value.Int() returns int64???
 	go base.Call(ch, "tests", "test_returns_setof_integer")
-	fmt.Println(<-ch)
-	fmt.Println(<-ch)
-	fmt.Println(<-ch)
+	a := <-ch
+	b := <-ch
+	c := <-ch
+	if a != 42 || b != 43 || c != 44 {
+		t.Errorf("Error expected values")
+	}
 }
 
 func TestCallReturnsIntegerAsString(t *testing.T) {
@@ -121,14 +129,36 @@ func TestCallReturnsNumeric(t *testing.T) {
 	}
 }
 
+/*
+func TestCallReturnsSetofNumeric(t *testing.T) {
+	ch := make(chan float32)
+	go base.Call(ch, "tests", "test_returns_setof_numeric")
+	a := <- ch
+	b := <- ch
+	if a != 3.14159 || b != 4.49 {
+		t.Errorf("Error expected value")
+	}
+}
+*/
+
 func TestCallReturnsReal(t *testing.T) {
 	var res float32
 	err := base.Call(&res, "tests", "test_returns_real")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_real")
 	}
-	if res != 3.14 {
+	if math.Abs(float64(res - 3.14)) > TOLERANCE {
 		t.Errorf("Error expected %f value is %f", 3.14, res)
+	}
+}
+
+func TestCallReturnsSetofReal(t *testing.T) {
+	ch := make(chan float64) // Must be float64, Value.Float() returns float64???
+	go base.Call(ch, "tests", "test_returns_setof_real")
+	a := <- ch
+	b := <- ch
+	if math.Abs(a - 3.14) > TOLERANCE || math.Abs(b - 4.49) > TOLERANCE {
+		t.Errorf("Error expected values %f %f are %f %f", 3.14, 4.49, a, b)
 	}
 }
 
@@ -151,6 +181,19 @@ func TestCallReturnsBoolFalse(t *testing.T) {
 	}
 	if res != false {
 		t.Errorf("Error expected %t value is %t", false, res)
+	}
+}
+
+func TestCallReturnsSetofBool(t *testing.T) {
+	ch := make(chan bool)
+	go base.Call(ch, "tests", "test_returns_setof_bool")
+	a := <- ch
+	b := <- ch
+	c := <- ch
+	d := <- ch
+	if a != false || b != true || c != true || d != false {
+		t.Errorf("Error expected values")
+
 	}
 }
 
@@ -203,6 +246,24 @@ func TestCallReturns64bitsDate(t *testing.T) {
 	if y != 2040 || m != 1 || d != 1 {
 		t.Errorf("Error 64bits date")
 	}
+}
+
+func TestCallReturnsSetofDate(t *testing.T) {
+	ch := make(chan time.Time)
+	go base.Call(ch, "tests", "test_returns_setof_date")
+	a := <- ch
+	b := <- ch
+	y1, m1, d1 := a.Date()
+	y2, m2, d2 := b.Date()
+	if y1 != 2015 || m1 != 1 || d1 != 1 ||
+		y2 != 2016 || m2 != 2 || d2 != 2 {
+		t.Errorf("Error expected values")		
+	}
+/*
+	if a != false || b != true || c != true || d != false {
+		t.Errorf("Error expected values")
+
+	}*/
 }
 
 func TestCallReturnsTimestamp(t *testing.T) {
