@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/feloy/pgproc.svg?branch=master)](https://travis-ci.org/feloy/pgproc)
 
+[![Coverage Status](https://coveralls.io/repos/github/feloy/pgproc/badge.svg?branch=master)](https://coveralls.io/github/feloy/pgproc?branch=master)
+
 # pgproc - Easily call PostgreSQL procedures from Go (golang)
 
 If you are using PostgreSQL server programming functionalities (user-defined 
