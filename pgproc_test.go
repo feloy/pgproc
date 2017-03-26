@@ -18,7 +18,6 @@ var (
 func TestMain(m *testing.M) {
 	base, _ = connect()
 	m.Run()
-	//	disconnect()
 }
 
 func connect() (*PgProc, error) {
@@ -212,15 +211,18 @@ func TestCallReturnsTime(t *testing.T) {
 		t.Errorf("Error expected date 0/1/1")
 	}
 }
-/*
+
 func TestCallReturnsComposite(t *testing.T) {
-	var res int
+	var res struct {
+		A int
+		B string
+	}
 	err := base.Call(&res, "tests", "test_returns_composite")
-	fmt.Println(res)
 	if err != nil {
 		fmt.Println(err)
 		t.Errorf("Error calling tests.test_returns_composite")
 	}
+	if res.A != 1 || res.B != "hello" {
+		t.Errorf("Error expected value")
+	}
 }
-*/
-
