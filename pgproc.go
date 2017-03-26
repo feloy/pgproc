@@ -68,8 +68,18 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 			}
 		}
 	} else {
-		row := p.db.QueryRow(query, params...)
-		err = ScanCompositeRow(row, rt, result)
+		if !rt.setof {
+			row := p.db.QueryRow(query, params...)
+			err = ScanCompositeRow(row, rt, result)
+		} else {
+			rows, _ := p.db.Query(query, params...)
+			defer rows.Close()
+			for rows.Next() {
+				if err := ScanCompositeRows(rows, rt, result); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return err
 }
@@ -84,6 +94,22 @@ func ScanCompositeRow(row *sql.Row, rt *returnType, result interface{}) error {
 	}
 
 	err := row.Scan(vs...)
+	return err
+}
+
+
+func ScanCompositeRows(rows *sql.Rows, rt *returnType, result interface{}) error {
+	c := reflect.ValueOf(result) // the channel we have to send to
+	v := reflect.New(reflect.TypeOf(result).Elem()).Elem()
+	var vs []interface{}
+	
+	for _, name := range rt.compositeNames {
+		field := v.FieldByName(strings.Title(name)).Addr().Interface()
+		vs = append(vs, field)
+	}
+
+	err := rows.Scan(vs...)
+	c.Send(v)
 	return err
 }
 

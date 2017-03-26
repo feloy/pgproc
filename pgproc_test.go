@@ -307,6 +307,23 @@ func TestCallReturnsComposite(t *testing.T) {
 	}
 }
 
+func TestCallReturnsSetofComposite(t *testing.T) {
+	type T struct {
+		A int
+		B string
+	}
+	ch := make (chan T)
+	go base.Call(ch, "tests", "test_returns_setof_composite")
+	res1 := <-ch
+	res2 := <-ch
+	if res1.A != 1 || res1.B != "hello" {
+		t.Errorf("Error expected value")
+	}
+	if res2.A != 2 || res2.B != "bye" {
+		t.Errorf("Error expected value")
+	}
+}
+
 // The order of fields of the struct doo not need to respect 
 // order of fields in PostgreSQL composite type
 func TestCallReturnsCompositeRandomOrder(t *testing.T) {
