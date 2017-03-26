@@ -226,3 +226,20 @@ func TestCallReturnsComposite(t *testing.T) {
 		t.Errorf("Error expected value")
 	}
 }
+
+// The order of fields of the struct doo not need to respect 
+// order of fields in PostgreSQL composite type
+func TestCallReturnsCompositeRandomOrder(t *testing.T) {
+	var res struct {
+		B string
+		A int
+	}
+	err := base.Call(&res, "tests", "test_returns_composite")
+	if err != nil {
+		fmt.Println(err)
+		t.Errorf("Error calling tests.test_returns_composite")
+	}
+	if res.A != 1 || res.B != "hello" {
+		t.Errorf("Error expected value")
+	}
+}
