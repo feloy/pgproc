@@ -2,10 +2,10 @@ package pgproc
 
 import (
 	"fmt"
+	"github.com/lib/pq"
 	"math"
 	"testing"
 	"time"
-	"github.com/lib/pq"
 )
 
 const (
@@ -21,8 +21,8 @@ var (
 )
 
 type Content struct {
-	Cnt_id int
-	Cnt_name string
+	CntId   int    `pgproc:"cnt_id"`
+	CntName string `pgproc:"cnt_name"`
 }
 
 func TestMain(m *testing.M) {
@@ -130,7 +130,7 @@ func TestCallReturnsSetofString(t *testing.T) {
 	a := <-ch
 	b := <-ch
 	c := <-ch
-	if a != "hello"|| b != "world" || c != "!" {
+	if a != "hello" || b != "world" || c != "!" {
 		t.Errorf("Error expected values")
 	}
 }
@@ -164,7 +164,7 @@ func TestCallReturnsReal(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_real")
 	}
-	if math.Abs(float64(res - 3.14)) > TOLERANCE {
+	if math.Abs(float64(res-3.14)) > TOLERANCE {
 		t.Errorf("Error expected %f value is %f", 3.14, res)
 	}
 }
@@ -172,9 +172,9 @@ func TestCallReturnsReal(t *testing.T) {
 func TestCallReturnsSetofReal(t *testing.T) {
 	ch := make(chan float64) // Must be float64, Value.Float() returns float64???
 	go base.Call(ch, "tests", "test_returns_setof_real")
-	a := <- ch
-	b := <- ch
-	if math.Abs(a - 3.14) > TOLERANCE || math.Abs(b - 4.49) > TOLERANCE {
+	a := <-ch
+	b := <-ch
+	if math.Abs(a-3.14) > TOLERANCE || math.Abs(b-4.49) > TOLERANCE {
 		t.Errorf("Error expected values %f %f are %f %f", 3.14, 4.49, a, b)
 	}
 }
@@ -204,10 +204,10 @@ func TestCallReturnsBoolFalse(t *testing.T) {
 func TestCallReturnsSetofBool(t *testing.T) {
 	ch := make(chan bool)
 	go base.Call(ch, "tests", "test_returns_setof_bool")
-	a := <- ch
-	b := <- ch
-	c := <- ch
-	d := <- ch
+	a := <-ch
+	b := <-ch
+	c := <-ch
+	d := <-ch
 	if a != false || b != true || c != true || d != false {
 		t.Errorf("Error expected values")
 
@@ -266,13 +266,13 @@ func TestCallReturns64bitsDate(t *testing.T) {
 func TestCallReturnsSetofDate(t *testing.T) {
 	ch := make(chan time.Time)
 	go base.Call(ch, "tests", "test_returns_setof_date")
-	a := <- ch
-	b := <- ch
+	a := <-ch
+	b := <-ch
 	y1, m1, d1 := a.Date()
 	y2, m2, d2 := b.Date()
 	if y1 != 2015 || m1 != 1 || d1 != 1 ||
 		y2 != 2016 || m2 != 2 || d2 != 2 {
-		t.Errorf("Error expected values")		
+		t.Errorf("Error expected values")
 	}
 }
 
@@ -286,7 +286,6 @@ func TestCallReturnsTimestamp(t *testing.T) {
 		t.Errorf("Error expected value")
 	}
 }
-
 
 func TestCallReturnsTime(t *testing.T) {
 	var res time.Time
@@ -315,7 +314,7 @@ func TestCallReturnsComposite(t *testing.T) {
 	}
 }
 
-// The order of fields of the struct doo not need to respect 
+// The order of fields of the struct doo not need to respect
 // order of fields in PostgreSQL composite type
 func TestCallReturnsCompositeRandomOrder(t *testing.T) {
 	var res struct {
@@ -337,7 +336,7 @@ func TestCallReturnsSetofComposite(t *testing.T) {
 		A int
 		B string
 	}
-	ch := make (chan T)
+	ch := make(chan T)
 	go base.Call(ch, "tests", "test_returns_setof_composite")
 	res1 := <-ch
 	res2 := <-ch
@@ -349,11 +348,11 @@ func TestCallReturnsSetofComposite(t *testing.T) {
 	}
 }
 
-// TODO pass res as a user-defined type with constants 
+// TODO pass res as a user-defined type with constants
 // type Enumtype int
 // const (
 //     Val1 MyEnum = iota
-//     Val2 
+//     Val2
 //     Val3
 // )
 func TestCallReturnsEnum(t *testing.T) {
@@ -404,8 +403,8 @@ func TestReturnsIncrementedInteger(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling test_returns_incremented_integer")
 	}
-	if res != input + 1 {
-		t.Errorf("Error expected %d value is %d\n", input + 1, res)
+	if res != input+1 {
+		t.Errorf("Error expected %d value is %d\n", input+1, res)
 	}
 }
 
@@ -416,8 +415,8 @@ func TestReturnsIncrementedNumeric(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling test_returns_incremented_numeric")
 	}
-	if res != input + 1.5 {
-		t.Errorf("Error expected %f value is %f\n", input + 1.5, res)
+	if res != input+1.5 {
+		t.Errorf("Error expected %f value is %f\n", input+1.5, res)
 	}
 }
 
@@ -428,8 +427,8 @@ func TestReturnsIncrementedReal(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling test_returns_incremented_real")
 	}
-	if res != input + 1.42 {
-		t.Errorf("Error expected %f value is %f\n", input + 1.42, res)
+	if res != input+1.42 {
+		t.Errorf("Error expected %f value is %f\n", input+1.42, res)
 	}
 }
 
@@ -440,8 +439,8 @@ func TestReturnsCatString(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling test_returns_cat_string")
 	}
-	if res != input + "." {
-		t.Errorf("Error expected '%s' value is '%s'\n", input + ".", res)
+	if res != input+"." {
+		t.Errorf("Error expected '%s' value is '%s'\n", input+".", res)
 	}
 }
 
@@ -455,7 +454,7 @@ func TestReturnsSameBool(t *testing.T) {
 	if res != input {
 		t.Errorf("Error expected '%t' value is '%t'\n", input, res)
 	}
-	
+
 	input = true
 	err = base.Call(&res, "tests", "test_returns_same_bool", input)
 	if err != nil {
@@ -584,8 +583,8 @@ func TestContentAddAndGet(t *testing.T) {
 
 	var item Content
 	base.Call(&item, "tests", "content_get", res)
-	if item.Cnt_id != res || item.Cnt_name != aName {
+	if item.CntId != res || item.CntName != aName {
 		t.Errorf("Error Expected value")
 	}
-	
+
 }

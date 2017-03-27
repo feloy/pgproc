@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
 	"reflect"
 	"strings"
 	"time"
-	"github.com/lib/pq"
 )
 
 type PgProc struct {
@@ -15,9 +15,9 @@ type PgProc struct {
 }
 
 type returnType struct {
-	scalar bool
-	setof bool
-	scalarType string
+	scalar         bool
+	setof          bool
+	scalarType     string
 	compositeNames pq.StringArray
 	compositeTypes pq.StringArray
 }
@@ -93,7 +93,15 @@ func ScanCompositeRow(row *sql.Row, rt *returnType, result interface{}) error {
 	v := reflect.ValueOf(result).Elem()
 	var vs []interface{}
 	for _, name := range rt.compositeNames {
-		field := v.FieldByName(strings.Title(name)).Addr().Interface()
+		f := v.FieldByName(strings.Title(name))
+		if !f.IsValid() {
+			fieldName, found := getFieldByTag(result, name)
+			if !found {
+				return errors.New("Error field " + name + " not found")
+			}
+			f = v.FieldByName(fieldName)
+		}
+		field := f.Addr().Interface()
 		vs = append(vs, field)
 	}
 
@@ -101,12 +109,11 @@ func ScanCompositeRow(row *sql.Row, rt *returnType, result interface{}) error {
 	return err
 }
 
-
 func ScanCompositeRows(rows *sql.Rows, rt *returnType, result interface{}) error {
 	c := reflect.ValueOf(result) // the channel we have to send to
 	v := reflect.New(reflect.TypeOf(result).Elem()).Elem()
 	var vs []interface{}
-	
+
 	for _, name := range rt.compositeNames {
 		field := v.FieldByName(strings.Title(name)).Addr().Interface()
 		vs = append(vs, field)
@@ -116,7 +123,6 @@ func ScanCompositeRows(rows *sql.Rows, rt *returnType, result interface{}) error
 	c.Send(v)
 	return err
 }
-
 
 //
 // Local static functions
@@ -144,7 +150,7 @@ func (p *PgProc) getReturnType(schema string, proc string, nargs int) (*returnTy
 	}
 }
 
-// getScalarReturnType gives the scalar type returned by a postgreSQL procedure 
+// getScalarReturnType gives the scalar type returned by a postgreSQL procedure
 // or returns a ErrNoRows error if the return type is not scalar
 func (p *PgProc) getScalarReturnType(schema string, proc string, nargs int) (*returnType, error) {
 	query := `
@@ -163,7 +169,7 @@ WHERE
 
 	row := p.db.QueryRow(query, schema, proc, nargs)
 	var (
-		name string
+		name  string
 		setof bool
 	)
 	err := row.Scan(&name, &setof)
@@ -174,7 +180,7 @@ WHERE
 	}
 }
 
-// getCompositeReturnType gives the compiste type returned by a postgreSQL procedure 
+// getCompositeReturnType gives the compiste type returned by a postgreSQL procedure
 func (p *PgProc) getCompositeReturnType(schema string, proc string, nargs int) (*returnType, error) {
 	query := `
 SELECT 
@@ -205,5 +211,18 @@ WHERE
 	} else {
 		return &returnType{scalar: false, setof: setof, compositeNames: names, compositeTypes: types}, nil
 	}
-	
+
+}
+
+// TODO: Optimize with map
+func getFieldByTag(v interface{}, tag string) (string, bool) {
+	t := reflect.TypeOf(v).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		foundTag := f.Tag.Get("pgproc")
+		if foundTag == tag {
+			return f.Name, true
+		}
+	}
+	return "", false
 }
