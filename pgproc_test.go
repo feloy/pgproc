@@ -259,11 +259,6 @@ func TestCallReturnsSetofDate(t *testing.T) {
 		y2 != 2016 || m2 != 2 || d2 != 2 {
 		t.Errorf("Error expected values")		
 	}
-/*
-	if a != false || b != true || c != true || d != false {
-		t.Errorf("Error expected values")
-
-	}*/
 }
 
 func TestCallReturnsTimestamp(t *testing.T) {
@@ -307,6 +302,23 @@ func TestCallReturnsComposite(t *testing.T) {
 	}
 }
 
+// The order of fields of the struct doo not need to respect 
+// order of fields in PostgreSQL composite type
+func TestCallReturnsCompositeRandomOrder(t *testing.T) {
+	var res struct {
+		B string
+		A int
+	}
+	err := base.Call(&res, "tests", "test_returns_composite")
+	if err != nil {
+		fmt.Println(err)
+		t.Errorf("Error calling tests.test_returns_composite")
+	}
+	if res.A != 1 || res.B != "hello" {
+		t.Errorf("Error expected value")
+	}
+}
+
 func TestCallReturnsSetofComposite(t *testing.T) {
 	type T struct {
 		A int
@@ -324,19 +336,117 @@ func TestCallReturnsSetofComposite(t *testing.T) {
 	}
 }
 
-// The order of fields of the struct doo not need to respect 
-// order of fields in PostgreSQL composite type
-func TestCallReturnsCompositeRandomOrder(t *testing.T) {
-	var res struct {
-		B string
-		A int
-	}
-	err := base.Call(&res, "tests", "test_returns_composite")
+// TODO pass res as a user-defined type with constants 
+// type Enumtype int
+// const (
+//     Val1 MyEnum = iota
+//     Val2 
+//     Val3
+// )
+func TestCallReturnsEnum(t *testing.T) {
+	var res string
+	err := base.Call(&res, "tests", "test_returns_enum")
 	if err != nil {
-		fmt.Println(err)
-		t.Errorf("Error calling tests.test_returns_composite")
+		t.Errorf("Error calling tests.test_returns_enum")
+		t.Error(err)
 	}
-	if res.A != 1 || res.B != "hello" {
-		t.Errorf("Error expected value")
+	if res != "val1" {
+		t.Errorf("Error expected %s value is %s", "val1", res)
 	}
 }
+
+// TODO get an array and not an []uint8
+func TestCallReturnsEnumArray(t *testing.T) {
+	var res []uint8
+	err := base.Call(&res, "tests", "test_returns_enum_array")
+	if err != nil {
+		t.Errorf("Error calling tests.test_returns_enum_array")
+		t.Error(err)
+	}
+}
+
+func TestHiddenFunction(t *testing.T) {
+	var res bool
+	err := base.Call(&res, "tests", "_hidden_function")
+	if err == nil {
+		t.Errorf("Error calling hidden function")
+	}
+}
+
+func TestFunctionRaisingException(t *testing.T) {
+	var res bool
+	err := base.Call(&res, "tests", "function_raising_exception")
+	if err == nil {
+		t.Errorf("Error calling function_raising_exception")
+	}
+}
+
+func TestReturnsIncrementedInteger(t *testing.T) {
+	var res int
+	input := int(5)
+	err := base.Call(&res, "tests", "test_returns_incremented_integer", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_incremented_integer")
+	}
+	if res != input + 1 {
+		t.Errorf("Error expected %d value is %d\n", input + 1, res)
+	}
+}
+
+func TestReturnsIncrementedNumeric(t *testing.T) {
+	var res float32
+	input := float32(5.4)
+	err := base.Call(&res, "tests", "test_returns_incremented_numeric", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_incremented_numeric")
+	}
+	if res != input + 1.5 {
+		t.Errorf("Error expected %f value is %f\n", input + 1.5, res)
+	}
+}
+
+func TestReturnsIncrementedReal(t *testing.T) {
+	var res float32
+	input := float32(5.4)
+	err := base.Call(&res, "tests", "test_returns_incremented_real", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_incremented_real")
+	}
+	if res != input + 1.42 {
+		t.Errorf("Error expected %f value is %f\n", input + 1.42, res)
+	}
+}
+
+func TestReturnsCatString(t *testing.T) {
+	var res string
+	input := string("hello")
+	err := base.Call(&res, "tests", "test_returns_cat_string", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_cat_string")
+	}
+	if res != input + "." {
+		t.Errorf("Error expected '%s' value is '%s'\n", input + ".", res)
+	}
+}
+
+func TestReturnsSameBool(t *testing.T) {
+	var res bool
+	input := false
+	err := base.Call(&res, "tests", "test_returns_same_bool", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_same_bool")
+	}
+	if res != input {
+		t.Errorf("Error expected '%t' value is '%t'\n", input, res)
+	}
+	
+	input = true
+	err = base.Call(&res, "tests", "test_returns_same_bool", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_same_bool")
+	}
+	if res != input {
+		t.Errorf("Error expected '%t' value is '%t'\n", input, res)
+	}
+}
+

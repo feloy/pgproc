@@ -2,11 +2,12 @@ package pgproc
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"github.com/lib/pq"
-	"time"
 	"reflect"
 	"strings"
+	"time"
+	"github.com/lib/pq"
 )
 
 type PgProc struct {
@@ -40,6 +41,10 @@ func NewPgProc(conninfo string) (*PgProc, error) {
 
 // Call calls a PostgreSQL procedure and stores the result
 func (p *PgProc) Call(result interface{}, schema string, proc string, params ...interface{}) error {
+
+	if proc[0] == '_' {
+		return errors.New("function not callable")
+	}
 
 	rt, err := p.getReturnType(schema, proc, len(params))
 	if err != nil {
@@ -155,8 +160,7 @@ WHERE
   pg_namespace_proc.nspname = $1 AND 
   proname = $2 AND 
   pronargs = $3 AND 
-  typtype IN ('b', 'p') AND
-  pg_namespace_ret.nspname = 'pg_catalog'`
+  typtype IN ('b', 'p', 'e')`
 
 	row := p.db.QueryRow(query, schema, proc, nargs)
 	var (
