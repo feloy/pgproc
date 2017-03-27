@@ -92,7 +92,6 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 func ScanCompositeRow(row *sql.Row, rt *returnType, result interface{}) error {
 	v := reflect.ValueOf(result).Elem()
 	var vs []interface{}
-
 	for _, name := range rt.compositeNames {
 		field := v.FieldByName(strings.Title(name)).Addr().Interface()
 		vs = append(vs, field)
@@ -180,10 +179,10 @@ func (p *PgProc) getCompositeReturnType(schema string, proc string, nargs int) (
 	query := `
 SELECT 
   (SELECT array_agg(attname ORDER BY attnum) FROM pg_attribute 
-   WHERE attrelid = pg_type_ret.typrelid),
+   WHERE attrelid = pg_type_ret.typrelid AND attnum > 0),
   (SELECT array_agg(typname ORDER BY attnum) FROM pg_attribute 
    INNER JOIN pg_type ON pg_attribute.atttypid = pg_type.oid 
-   WHERE attrelid = pg_type_ret.typrelid),
+   WHERE attrelid = pg_type_ret.typrelid AND attnum > 0),
   proretset
 FROM pg_proc
 INNER JOIN pg_type pg_type_ret ON pg_type_ret.oid = pg_proc.prorettype

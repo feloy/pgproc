@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 	"time"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 const (
@@ -20,6 +20,11 @@ var (
 	base     *PgProc
 )
 
+type Content struct {
+	Cnt_id int
+	Cnt_name string
+}
+
 func TestMain(m *testing.M) {
 	base, _ = connect()
 	m.Run()
@@ -30,6 +35,18 @@ func connect() (*PgProc, error) {
 		user, password, host, dbname)
 	base, err := NewPgProc(conninfo)
 	return base, err
+}
+
+func dateEqual(date1 time.Time, date2 time.Time) bool {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func clockEqual(date1 time.Time, date2 time.Time) bool {
+	h1, m1, s1 := date1.Clock()
+	h2, m2, s2 := date2.Clock()
+	return h1 == h2 && m1 == m2 && s1 == s2
 }
 
 func TestParamsString(t *testing.T) {
@@ -203,9 +220,7 @@ func TestCallReturnsDate(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_date")
 	}
-	yExp, mExp, dExp := res.Date()
-	yNow, mNow, dNow := time.Now().Date()
-	if yExp != yNow || mExp != mNow || dExp != dNow {
+	if !dateEqual(res, time.Now()) {
 		t.Errorf("Error expected value")
 	}
 	h, m, s := res.Clock()
@@ -267,9 +282,7 @@ func TestCallReturnsTimestamp(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_timestamp")
 	}
-	yExp, mExp, dExp := res.Date()
-	yNow, mNow, dNow := time.Now().Date()
-	if yExp != yNow || mExp != mNow || dExp != dNow {
+	if !dateEqual(res, time.Now()) {
 		t.Errorf("Error expected value")
 	}
 }
@@ -357,11 +370,14 @@ func TestCallReturnsEnum(t *testing.T) {
 
 // TODO get an array and not an []uint8
 func TestCallReturnsEnumArray(t *testing.T) {
-	var res []uint8
+	var res pq.StringArray
 	err := base.Call(&res, "tests", "test_returns_enum_array")
 	if err != nil {
 		t.Errorf("Error calling tests.test_returns_enum_array")
 		t.Error(err)
+	}
+	if len(res) != 2 || res[0] != "val1" || res[1] != "val2" {
+		t.Errorf("Error expected values")
 	}
 }
 
@@ -450,3 +466,126 @@ func TestReturnsSameBool(t *testing.T) {
 	}
 }
 
+func TestReturnsSameDate(t *testing.T) {
+	var res time.Time
+	input := time.Now()
+	err := base.Call(&res, "tests", "test_returns_same_date", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_same_date")
+	}
+	if !dateEqual(input, res) {
+		t.Errorf("Error expected '%s' value is '%s'\n", input, res)
+	}
+}
+
+func TestReturnsSameTimestamp(t *testing.T) {
+	var res time.Time
+	input := time.Now()
+	err := base.Call(&res, "tests", "test_returns_same_timestamp", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_same_timestamp")
+	}
+	if !dateEqual(input, res) || !clockEqual(input, res) {
+		t.Errorf("Error expected '%s' value is '%s'\n", input, res)
+	}
+}
+
+func TestReturnsSameTime(t *testing.T) {
+	var res time.Time
+	input := time.Now()
+	err := base.Call(&res, "tests", "test_returns_same_time", input)
+	if err != nil {
+		t.Errorf("Error calling test_returns_same_time")
+	}
+	if !clockEqual(input, res) {
+		t.Errorf("Error expected '%s' value is '%s'\n", input, res)
+	}
+}
+
+// TODO compute pqVal in pgproc.Call
+func TestIntegerArrayArg(t *testing.T) {
+	var ch = make(chan int64)
+	var input pq.Int64Array = pq.Int64Array{1, 3, 7}
+	pqVal, _ := input.Value()
+	go base.Call(ch, "tests", "test_integer_array_arg", pqVal)
+	a := <-ch
+	b := <-ch
+	c := <-ch
+	if a != 1 || b != 3 || c != 7 {
+		t.Errorf("Error expected values")
+	}
+}
+
+// TODO compute pqVal in pgproc.Call
+func TestVarcharArrayArg(t *testing.T) {
+	var ch = make(chan string)
+	var input pq.StringArray = pq.StringArray{"foo", "bar"}
+	pqVal, _ := input.Value()
+	go base.Call(ch, "tests", "test_varchar_array_arg", pqVal)
+	a := <-ch
+	b := <-ch
+	if a != "foo" || b != "bar" {
+		t.Errorf("Error expected values")
+	}
+}
+
+func TestEnumArg(t *testing.T) {
+	var res string
+	input := "val1"
+	err := base.Call(&res, "tests", "test_enum_arg", input)
+	if err != nil {
+		t.Errorf("Error calling test_enum_arg")
+	}
+	if res != input {
+		t.Errorf("Error expected %s value is %s", input, res)
+	}
+}
+
+// TODO why result as []uint8?
+func TestEnumArrayArg(t *testing.T) {
+	var ch = make(chan []uint8)
+	var input pq.StringArray = pq.StringArray{"val3", "val1"}
+	pqVal, _ := input.Value()
+	go base.Call(ch, "tests", "test_enum_array_arg", pqVal)
+	a := <-ch
+	b := <-ch
+	if string(a) != "val3" || string(b) != "val1" {
+		t.Errorf("Error expected values")
+	}
+}
+
+func TestAccentedString(t *testing.T) {
+	var res string
+	err := base.Call(&res, "tests", "test_returns_accented_string")
+	if err != nil {
+		t.Errorf("Error calling test_returns_accented_string")
+	}
+	expected := "héllo"
+	if res != expected {
+		t.Errorf("Error expected %s value is %s", expected, res)
+	}
+}
+
+func TestEmptyArray(t *testing.T) {
+	var res pq.Int64Array
+	go base.Call(&res, "tests", "test_returns_empty_array")
+	if len(res) != 0 {
+		t.Errorf("Error expected empty array")
+	}
+}
+
+func TestContentAddAndGet(t *testing.T) {
+	var res int
+	aName := "a name"
+	base.Call(&res, "tests", "content_add", aName)
+	if res <= 0 {
+		t.Errorf("Expected positive value is %d", res)
+	}
+
+	var item Content
+	base.Call(&item, "tests", "content_get", res)
+	if item.Cnt_id != res || item.Cnt_name != aName {
+		t.Errorf("Error Expected value")
+	}
+	
+}
