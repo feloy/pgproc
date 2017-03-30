@@ -57,8 +57,12 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 
 	if rt.scalar {
 		if !rt.setof {
-			row := p.db.QueryRow(query, params...)
-			err = row.Scan(result)
+			if result != nil {
+				row := p.db.QueryRow(query, params...)
+				err = row.Scan(result)
+			} else {
+				_, err = p.db.Exec(query, params...)
+			}
 		} else {
 			rows, _ := p.db.Query(query, params...)
 			defer rows.Close()
