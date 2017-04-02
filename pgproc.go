@@ -2,6 +2,7 @@ package pgproc
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lib/pq"
@@ -63,7 +64,21 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 		if !rt.setof {
 			if result != nil {
 				row := p.db.QueryRow(query, params...)
-				err = row.Scan(result)
+				if rt.scalarType == "json" {
+					switch result.(type) {
+					case *string: // return json if a string is passes as arg
+						err = row.Scan(result)
+					default:
+						var temp string
+						err = row.Scan(&temp)
+						if err == nil {
+							err = json.Unmarshal([]byte(temp), result)
+						}
+					}
+				} else {
+					err = row.Scan(result)
+				}
+				
 			} else {
 				_, err = p.db.Exec(query, params...)
 			}

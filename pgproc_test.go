@@ -588,3 +588,33 @@ func TestContentAddAndGet(t *testing.T) {
 	}
 
 }
+
+type Res1 struct {
+	Id int
+	Name string
+}
+
+func TestReturnsJsonRaw(t *testing.T) {
+	var res string
+	err := base.Call(&res, "tests", "returns_json")
+	if err != nil {
+		t.Errorf("Error calling tests.returns_json")
+	}
+	if res != "[{\"id\":1,\"name\":\"One\"}, {\"id\":2,\"name\":\"Two\"}]" {
+		t.Errorf("Error expected value")
+	}
+
+}
+
+func TestReturnsJsonUnmarshalled(t *testing.T) {
+	var res []Res1
+	err := base.Call(&res, "tests", "returns_json")
+	if err != nil {
+		t.Errorf("Error calling tests.returns_json")
+	}
+	if len(res) != 2 || res[0].Id != 1 || res[1].Id != 2 ||
+		res[0].Name != "One" || res[1].Name != "Two" {
+		fmt.Println("Error expected value")
+	}
+	
+}

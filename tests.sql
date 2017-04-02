@@ -428,4 +428,21 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION tests.returns_json() 
+RETURNS json
+LANGUAGE plpgsql
+STABLE 
+AS $$
+DECLARE
+  ret json;
+BEGIN
+  SELECT json_agg(row_to_json(d)) INTO ret FROM (
+    SELECT 1 AS id, 'One' AS name
+    UNION
+    SELECT 2, 'Two'
+  ) d;
+  RETURN ret;
+END;
+$$;
+
 COMMIT;
