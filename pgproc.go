@@ -39,6 +39,10 @@ func NewPgProc(conninfo string) (*PgProc, error) {
 	return &pgproc, nil
 }
 
+func (p *PgProc) SetConcurrency(n int) {
+	p.db.SetMaxOpenConns(n)
+}
+
 // Call calls a PostgreSQL procedure and stores the result
 func (p *PgProc) Call(result interface{}, schema string, proc string, params ...interface{}) error {
 
