@@ -94,6 +94,7 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 				}
 				c.Send(reflect.ValueOf(val))
 			}
+			c.Close()
 		}
 	} else {
 		if !rt.setof {
@@ -107,6 +108,8 @@ func (p *PgProc) Call(result interface{}, schema string, proc string, params ...
 					return err
 				}
 			}
+			c := reflect.ValueOf(result) // the channel we have to send to
+			c.Close()
 		}
 	}
 	return err
